@@ -1,28 +1,29 @@
-name: Postar Ofertas no Telegram
+name: Postar Ofertas Automáticas Shopee
 
 on:
   schedule:
-    # Este comando faz rodar a cada 1 hora exata
-    - cron: '0 * * * *'
+    - cron: '0 * * * *' # Executa a cada 1 hora
   workflow_dispatch:
 
 jobs:
   postar:
     runs-on: ubuntu-latest
     steps:
-      - name: Baixar codigo
+      - name: Baixar código
         uses: actions/checkout@v3
 
-      - name: Preparar Python
+      - name: Configurar Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Instalar ajudantes
+      - name: Instalar Dependências
         run: pip install requests
 
-      - name: Rodar o robo
+      - name: Executar Robô
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
+          SHOPEE_APP_ID: ${{ secrets.SHOPEE_APP_ID }}
+          SHOPEE_SECRET: ${{ secrets.SHOPEE_SECRET }}
         run: python bot.py
