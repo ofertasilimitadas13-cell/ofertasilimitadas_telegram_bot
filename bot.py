@@ -3,6 +3,7 @@ import time
 import hashlib
 import requests
 import json
+import random
 
 # 1. Configurações e Variáveis de Ambiente
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -34,13 +35,16 @@ def salvar_historico(historico):
         json.dump(historico, f, ensure_ascii=False, indent=4)
 
 def buscar_e_gerar_oferta():
-    """Consulta a API de Afiliados da Shopee e evita produtos repetidos."""
+    """Consulta a API de Afiliados da Shopee navegando por páginas aleatórias."""
     timestamp = int(time.time())
     
-    query = """
-    query {
-      productOfferV2(page: 1, limit: 30, sortType: 1) {
-        nodes {
+    # Sorteadas páginas aleatórias entre 1 e 5 para variar as ofertas
+    pagina_aleatoria = random.randint(1, 5)
+    
+    query = f"""
+    query {{
+      productOfferV2(page: {pagina_aleatoria}, limit: 50, sortType: 1) {{
+        nodes {{
           itemId
           productName
           price
@@ -48,9 +52,9 @@ def buscar_e_gerar_oferta():
           priceMax
           imageUrl
           offerLink
-        }
-      }
-    }
+        }}
+      }}
+    }}
     """
     
     payload = {"query": query}
@@ -73,18 +77,16 @@ def buscar_e_gerar_oferta():
             # Filtra apenas os produtos que NÃO estão no histórico recente
             produtos_disponiveis = [p for p in produtos if str(p.get("itemId")) not in historico]
             
-            # Se todos já foram postados, limpa o histórico para recomeçar o ciclo
+            # Se todos dessa página já foram postados, aceita a lista geral do lote
             if not produtos_disponiveis:
                 produtos_disponiveis = produtos
-                historico = []
             
-            import random
             produto = random.choice(produtos_disponiveis)
             
-            # Guarda no histórico (mantém os últimos 50 produtos)
+            # Guarda no histórico (mantém os últimos 100 produtos salvos)
             item_id = str(produto.get("itemId"))
             historico.append(item_id)
-            if len(historico) > 50:
+            if len(historico) > 100:
                 historico.pop(0)
             salvar_historico(historico)
             
@@ -94,7 +96,7 @@ def buscar_e_gerar_oferta():
                 preco_atual = float(produto.get('price', 0))
                 
             preco_por = f"R$ {preco_atual:.2f}"
-            preco_de = f"R$ {preco_atual * 1.35:.2f}" # Exibe um valor de referência cortado
+            preco_de = f"R$ {preco_atual * 1.35:.2f}" # Valor de referência riscado
             
             return {
                 "titulo": produto.get("productName"),
